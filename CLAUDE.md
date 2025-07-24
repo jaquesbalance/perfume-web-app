@@ -1,346 +1,263 @@
-# CLAUDE.md - React Native Perfume App Development Guide
+# CLAUDE.md - React TypeScript Perfume Web App Development Guide
 
 ## Project Overview
-This React Native mobile app provides a super intuitive perfume recommendation system with collection management. Built with Expo using modern React Native patterns and TypeScript.
+This modern React TypeScript web application provides an intuitive perfume discovery and recommendation system. Built with Vite for fast development and Tailwind CSS for beautiful styling.
 
 ## Technology Stack
-- **React Native** with TypeScript
-- **Expo SDK 50+** (managed workflow)
-- **Expo Router** for file-based navigation
-- **Zustand** for state management
-- **React Query/TanStack Query** for server state
-- **NativeWind** for styling (Tailwind CSS)
+- **React 18** with TypeScript
+- **Vite** for fast bundling and development
+- **Tailwind CSS** for modern styling
+- **React Query/TanStack Query** for server state management
+- **Lucide React** for clean icons
 
 ## Quick Start
 ```bash
+# Navigate to project directory
+cd perfume-web-app
+
 # Install dependencies
 npm install
 
 # Start development server
-npx expo start
+npm run dev
 
-# Run on specific platform
-npx expo start --ios
-npx expo start --android
-npx expo start --web
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
 ## Project Structure
 ```
-PerfumeApp/
-├── app/                     # Expo Router pages
-│   ├── (auth)/             # Authentication screens
-│   │   ├── login.tsx
-│   │   ├── register.tsx
-│   │   └── _layout.tsx
-│   ├── (tabs)/             # Main tab navigation
-│   │   ├── home.tsx        # Recommendations
-│   │   ├── discover.tsx    # Browse perfumes
-│   │   ├── collection.tsx  # My collection
-│   │   ├── profile.tsx     # User profile
-│   │   └── _layout.tsx
-│   ├── perfume/            # Perfume detail screens
-│   │   └── [id].tsx
-│   ├── _layout.tsx         # Root layout
-│   └── index.tsx           # Entry point
-├── components/             # Reusable components
-│   ├── ui/                 # Base UI components
-│   ├── features/           # Feature-specific components
-│   └── forms/              # Form components
+perfume-web-app/
 ├── src/
-│   ├── config/             # App configuration
-│   ├── services/           # API and external services
-│   ├── stores/             # Zustand stores
-│   ├── hooks/              # Custom hooks
-│   ├── utils/              # Utility functions
-│   └── types/              # TypeScript types
-├── assets/                 # Static assets
-└── constants/              # App constants
+│   ├── components/          # Reusable UI components
+│   │   ├── SearchInput.tsx  # Search input with icon
+│   │   ├── PerfumeCard.tsx  # Perfume grid card
+│   │   ├── PerfumeDetail.tsx # Detailed perfume view
+│   │   ├── FragranceNotes.tsx # Notes visualization
+│   │   └── RecommendationCard.tsx # Recommendation cards
+│   ├── types/
+│   │   └── perfume.ts       # TypeScript type definitions
+│   ├── lib/
+│   │   ├── api.ts          # API functions and HTTP client
+│   │   └── recommendation-engine.ts # Recommendation logic
+│   ├── App.tsx             # Main application component
+│   ├── index.css           # Tailwind CSS and global styles
+│   └── main.tsx            # Application entry point
+├── public/                 # Static assets
+├── index.html             # HTML template
+├── package.json           # Dependencies and scripts
+├── tailwind.config.js     # Tailwind CSS configuration
+├── tsconfig.json          # TypeScript configuration
+└── vite.config.ts         # Vite configuration
 ```
 
 ## Core Features
 
-### Authentication
-- Email/password registration and login
-- Secure token storage using Expo SecureStore
-- Auto-login with stored credentials
-- Form validation and error handling
-
-### Home Screen (Recommendations)
-- Personalized perfume recommendations
-- "Recommended for You" section
-- Recent activity display
-- Quick action buttons
-- Pull-to-refresh functionality
-
-### Discover Screen
-- Search with instant results
-- Advanced filtering (brand, category, notes)
-- Sort options (popular, newest, price)
-- Infinite scroll pagination
-- Category browsing
-
-### Collection Management
-- Four collection types: Owned, Loved, Want to Try, Disliked
-- Personal ratings and notes
-- Collection statistics
-- Bulk actions (move, delete)
-- Export functionality
+### Search & Discovery
+- **Instant search** with debounced API calls
+- **Grid layout** with responsive design
+- **Image loading** with fallback placeholders
+- **Search result count** and status messages
 
 ### Perfume Details
-- Comprehensive perfume information
-- Notes breakdown (Top, Middle, Base)
-- High-resolution images
-- Similar perfumes section
-- Add to collection modal
+- **High-resolution images** with error handling
+- **Comprehensive information** (name, brand, year, description)
+- **Fragrance notes breakdown** (top, heart, base)
+- **Clean typography** with Playfair Display for headings
 
-### Profile & Settings
-- User profile management
-- App preferences
-- Collection statistics
-- Help & support
+### Intelligent Recommendations
+- **Smart algorithm** analyzing fragrance similarity
+- **Explanation system** showing why perfumes are recommended
+- **Confidence scoring** based on note matching
+- **Multiple recommendation types**:
+  - Similar notes
+  - Same brand
+  - Complementary profiles
+  - Popular choices
+
+### UI/UX Features
+- **Responsive design** (mobile-first approach)
+- **Loading states** with animated spinners
+- **Error handling** with user-friendly messages
+- **Smooth transitions** and hover effects
+- **Accessible design** with proper ARIA labels
 
 ## Backend API Integration
 
-### Configuration
+### API Configuration
 ```typescript
-// src/config/api.ts
-export const API_CONFIG = {
-  BASE_URL: Platform.select({
-    ios: 'http://localhost:3000',
-    android: 'http://10.0.2.2:3000',
-    web: 'http://localhost:3000',
-  }),
-  ENDPOINTS: {
-    AUTH: {
-      LOGIN: '/api/auth/login',
-      REGISTER: '/api/auth/register',
-      PROFILE: '/api/auth/profile',
-    },
-    PERFUMES: {
-      LIST: '/api/perfumes',
-      DETAILS: (id: string) => `/api/perfumes/${id}`,
-      SEARCH: '/api/perfumes/search',
-    },
-    RECOMMENDATIONS: {
-      PERSONALIZED: '/api/recommendations/personalized',
-      SIMILAR: '/api/recommendations/similar',
-    },
-    COLLECTION: {
-      LIST: '/api/users/collection',
-      ADD: '/api/users/collection',
-      UPDATE: (id: string) => `/api/users/collection/${id}`,
-      DELETE: (id: string) => `/api/users/collection/${id}`,
-    },
-  },
+// lib/api.ts
+const API_BASE_URL = 'http://localhost:3000';
+
+export const perfumeApi = {
+  getAllPerfumes,    // GET /api/perfumes
+  searchPerfumes,    // GET /api/perfumes?query=...
+  getPerfumeById,    // GET /api/perfumes/:id
+  getSimilarPerfumes, // GET /api/recommendations/similar
 };
 ```
 
-### HTTP Client
-- Centralized API communication
-- Automatic JWT token handling
-- Request/response interceptors
-- Error handling with proper user feedback
+### Data Types
+```typescript
+interface Perfume {
+  id: string;
+  name: string;
+  brand: string;
+  title: string;
+  description: string;
+  year?: string | number;
+  imgId?: string;
+  notes?: {
+    top: string[];
+    middle: string[];
+    base: string[];
+  };
+}
+```
+
+## Styling System
+
+### Tailwind CSS Setup
+- **Custom color palette** with primary/accent colors
+- **Component classes** for cards, buttons, etc.
+- **Typography** with Inter and Playfair Display fonts
+- **Responsive utilities** for all screen sizes
+
+### Design Tokens
+```css
+:root {
+  --primary: #0ea5e9;      /* Blue */
+  --accent: #ec4899;       /* Pink */
+  --gray-50: #f9fafb;      /* Background */
+  --border: #e5e7eb;       /* Borders */
+}
+```
 
 ## State Management
 
-### Zustand Stores
-```typescript
-// Authentication store
-const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      logout: () => set({ user: null, isAuthenticated: false }),
-    }),
-    { name: 'auth-storage' }
-  )
-);
+### React Query
+- **Server state caching** with 5-minute stale time
+- **Background refetching** for fresh data
+- **Error handling** with retry logic
+- **Loading states** for better UX
 
-// Collection store
-const useCollectionStore = create<CollectionState>()(
-  persist(
-    (set) => ({
-      items: [],
-      favorites: [],
-      addItem: (item) => set((state) => ({ items: [...state.items, item] })),
-      removeItem: (id) => set((state) => ({ items: state.items.filter(i => i.id !== id) })),
-    }),
-    { name: 'collection-storage' }
-  )
-);
-```
+### Local State
+- **Search query** with controlled input
+- **Selected perfume** for detail view
+- **Navigation state** for back/forward
 
-### React Query Integration
-- Server state management
-- Automatic caching and background updates
-- Optimistic updates for better UX
-- Error handling and retry logic
+## Performance Optimizations
 
-## UI/UX Guidelines
+### Image Handling
+- **Progressive loading** with placeholders
+- **Error fallbacks** for missing images
+- **Optimized URLs** from CDN
 
-### Design System
-- Consistent color palette (primary blues, secondary pinks)
-- Typography scale using Inter and Playfair Display
-- Standardized spacing using 8px grid
-- Rounded corners (8px for buttons, 12px for cards)
-
-### Components
-- Reusable UI components with TypeScript props
-- Accessible design with proper labels
-- Loading states and error boundaries
-- Responsive design for different screen sizes
-
-### Animations
-- Smooth transitions between screens
-- Loading indicators
-- Swipe gestures for cards
-- Pull-to-refresh animations
+### Bundle Optimization
+- **Vite bundling** with tree shaking
+- **Lazy loading** of recommendation data
+- **Code splitting** at route level
 
 ## Development Guidelines
 
 ### Code Style
-- ESLint and Prettier configuration
-- TypeScript strict mode
-- Consistent import organization
-- Component structure patterns
+- **TypeScript strict mode** enabled
+- **ESLint + Prettier** configuration
+- **Consistent imports** organization
+- **Component naming** conventions
 
-### Performance
-- React.memo for expensive components
-- useCallback for event handlers
-- useMemo for expensive calculations
-- FlashList for large lists
-- Optimized images with Expo Image
+### Component Structure
+```typescript
+interface ComponentProps {
+  // Props with clear types
+}
 
-### Testing
-- Unit tests for components
-- Integration tests for API calls
-- E2E tests for critical user flows
-- Accessibility testing
+export function Component({ prop1, prop2 }: ComponentProps) {
+  // Component logic
+  return (
+    <div className="tailwind-classes">
+      {/* JSX content */}
+    </div>
+  );
+}
+```
+
+### Error Boundaries
+- **Global error handling** in App component
+- **Graceful degradation** for API failures
+- **User-friendly error messages**
 
 ## Key Commands
 
 ### Development
 ```bash
 # Start development server
-npx expo start
+npm run dev
 
-# Run on specific platform
-npx expo start --ios
-npx expo start --android
-npx expo start --web
+# Build for production
+npm run build
 
-# Clear cache
-npx expo start --clear
-
-# Check for updates
-npx expo install --fix
-```
-
-### Testing
-```bash
-# Run unit tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run linter
-npm run lint
+# Preview production build
+npm run preview
 
 # Run type checking
-npm run type-check
+npx tsc --noEmit
+
+# Format code
+npx prettier --write src/
 ```
 
-### Building
+### Deployment
 ```bash
-# Build development version
-eas build --profile development --platform ios
-eas build --profile development --platform android
+# Build optimized bundle
+npm run build
 
-# Build production version
-eas build --profile production --platform all
+# Deploy to Vercel
+vercel
 
-# Submit to app stores
-eas submit --platform ios
-eas submit --platform android
+# Deploy to Netlify
+netlify deploy --prod --dir=dist
 ```
 
-## Environment Setup
-
-### Required Dependencies
-```json
-{
-  "expo": "~50.0.0",
-  "expo-router": "~3.4.0",
-  "expo-secure-store": "~12.8.0",
-  "@tanstack/react-query": "^5.0.0",
-  "zustand": "^4.4.0",
-  "nativewind": "^2.0.11"
-}
-```
-
-### Configuration Files
-- `app.json` - Expo configuration
-- `tailwind.config.js` - NativeWind styling
-- `tsconfig.json` - TypeScript configuration
-- `eas.json` - EAS Build configuration
+## Browser Support
+- **Modern browsers** (ES2020+)
+- **Chrome, Firefox, Safari, Edge**
+- **Mobile responsive** design
+- **Progressive enhancement**
 
 ## Security Considerations
-- Secure token storage with Expo SecureStore
-- Input validation and sanitization
-- API request authentication
-- Proper error handling without exposing sensitive data
+- **Input sanitization** for search queries
+- **XSS protection** with React's built-in escaping
+- **CORS handling** for API requests
+- **Content Security Policy** headers
 
-## Performance Optimizations
-- Image optimization and caching
-- List virtualization with FlashList
-- Bundle optimization
-- Code splitting for lazy loading
-- Proper memory management
+## Testing Strategy
+- **Component testing** with React Testing Library
+- **API integration tests**
+- **E2E testing** with Playwright
+- **Accessibility testing** with axe-core
 
-## Deployment Strategy
-- Development builds for testing
-- EAS Build for production
-- App Store Connect for iOS
-- Google Play Console for Android
-- Web deployment with Vercel/Netlify
-
-## Troubleshooting
-
-### Common Issues
-```bash
-# Metro cache issues
-npx expo start --clear
-
-# EAS build issues
-eas build --clear-cache
-
-# Platform-specific builds
-npx expo run:ios
-npx expo run:android
-```
-
-### Platform Differences
-- iOS: Haptic feedback, SF Symbols
-- Android: Material Design, hardware back button
-- Web: Mouse interactions, responsive design
+## Deployment Options
+- **Vercel** - Recommended for React apps
+- **Netlify** - Good for static sites
+- **AWS S3 + CloudFront** - Enterprise option
+- **Docker** - Containerized deployment
 
 ## Additional Resources
-- [Expo Documentation](https://docs.expo.dev/)
-- [React Native Documentation](https://reactnative.dev/)
-- [NativeWind Documentation](https://www.nativewind.dev/)
-- [Zustand Documentation](https://github.com/pmndrs/zustand)
+- [React Documentation](https://react.dev/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Vite Documentation](https://vitejs.dev/guide/)
 - [React Query Documentation](https://tanstack.com/query/latest)
 
-## App Store Requirements
-- App icons (1024x1024 PNG)
-- Splash screens (various sizes)
-- App Store screenshots
-- App descriptions and metadata
-- Privacy policy and terms of service
-- App review guidelines compliance
+## Environment Variables
+```bash
+# .env.local
+VITE_API_BASE_URL=http://localhost:3000
+VITE_APP_TITLE=Perfume Discovery
+```
 
-This CLAUDE.md provides everything needed to understand, develop, and deploy the React Native perfume recommendation app successfully.
+This React TypeScript web application provides a modern, performant, and maintainable solution for perfume discovery with intelligent recommendations.
