@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Search, Filter, Star, Heart } from 'lucide-react';
+import { Loader2, Sparkles, Target, CheckCircle2 } from 'lucide-react';
 import type { Perfume } from './types/perfume';
 import { perfumeApi } from './lib/api';
-import { SearchInput } from './components/SearchInput';
+import { SearchAutocomplete } from './components/SearchAutocomplete';
 import { PerfumeCard } from './components/PerfumeCard';
 import { PerfumeDetail } from './components/PerfumeDetail';
 
@@ -98,79 +98,109 @@ function PerfumeApp() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header Navigation */}
+      {/* Header Navigation - Simplified */}
       <div className="header-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-slate-900">
-                FragranceFind
-              </h1>
-            </div>
-            
-            {/* Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">Discover</a>
-              <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">Brands</a>
-              <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">Notes</a>
-            </div>
-            
-            {/* User Actions */}
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-slate-600 hover:text-slate-900">
-                <Heart className="w-5 h-5" />
-              </button>
-              <button className="btn-primary">
-                Sign In
-              </button>
-            </div>
+          <div className="flex items-center justify-center h-16">
+            {/* Logo - Centered */}
+            <h1 className="text-2xl font-bold text-slate-900">
+              FragranceFind
+            </h1>
           </div>
         </div>
       </div>
 
-      {/* Hero Section */}
+      {/* Hero Section - Redesigned with "Start With One" approach */}
       <div className="bg-gradient-to-b from-white to-slate-50 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              Discover Your Perfect Fragrance
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
+              Name one perfume you love.<br />
+              We'll find 1,000 more.
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Explore thousands of perfumes with intelligent recommendations based on your preferences
-            </p>
           </div>
-          
-          {/* Enhanced Search */}
-          <div className="relative max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by perfume name, brand, or fragrance notes..."
-                className="w-full pl-12 pr-12 py-4 text-lg border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 shadow-sm"
-              />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600">
-                <Filter className="w-5 h-5" />
-              </button>
-            </div>
+
+          {/* Large Prominent Search with Autocomplete */}
+          <SearchAutocomplete
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSelect={handlePerfumeSelect}
+            placeholder="Try 'Chanel No. 5' or 'Bleu de Chanel'..."
+            className="max-w-3xl mx-auto mb-8"
+          />
+
+          {/* OR Divider */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="h-px bg-slate-300 w-20"></div>
+            <span className="text-slate-500 font-medium">OR explore by</span>
+            <div className="h-px bg-slate-300 w-20"></div>
           </div>
-          
-          {/* Filter Chips */}
-          <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {categories.map((category) => (
+
+          {/* Category Chips */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {categories.filter(c => c.id !== 'all').map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.id)}
-                className={`filter-chip ${
-                  selectedCategory === category.id ? 'filter-chip-active' : ''
+                className={`px-6 py-3 rounded-full font-semibold transition-all duration-200 ${
+                  selectedCategory === category.id
+                    ? 'bg-primary-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border-2 border-slate-200 hover:border-primary-300'
                 }`}
               >
                 {category.label}
               </button>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="bg-white py-16 border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12">
+            How It Works
+          </h3>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-primary-600" />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-3">
+                Tell us one perfume you like
+              </h4>
+              <p className="text-slate-600 leading-relaxed">
+                Search for any fragrance you already know and love. Even just one is enough to get started.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="w-8 h-8 text-primary-600" />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-3">
+                We analyze fragrance notes
+              </h4>
+              <p className="text-slate-600 leading-relaxed">
+                Our algorithm examines the scent profile, notes, and characteristics to understand what you enjoy.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-primary-600" />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-3">
+                Discover perfect matches
+              </h4>
+              <p className="text-slate-600 leading-relaxed">
+                Get personalized recommendations with similarity scores showing exactly why each fragrance matches your taste.
+              </p>
+            </div>
           </div>
         </div>
       </div>
