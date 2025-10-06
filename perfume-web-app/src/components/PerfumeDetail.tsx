@@ -111,10 +111,10 @@ export function PerfumeDetail({ perfume, onBack, onPerfumeSelect }: PerfumeDetai
             <div className="space-y-4">
               {recommendationData.slice(0, 4).map((recData, index) => {
                 const reason = RecommendationEngine.generateRecommendationReasonFromData(
-                  recData, 
+                  recData,
                   index
                 );
-                
+
                 return (
                   <RecommendationCard
                     key={recData.perfume.id}

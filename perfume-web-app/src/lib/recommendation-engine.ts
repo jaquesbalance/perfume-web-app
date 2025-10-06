@@ -1,13 +1,13 @@
 import type { Perfume, RecommendationReason } from '../types/perfume';
 
 export class RecommendationEngine {
-  // Generate recommendation reasoning from API data  
+  // Generate recommendation reasoning from API data
   static generateRecommendationReasonFromData(
     data: any,
     index: number
   ): RecommendationReason {
     const perfume = data.perfume || data;
-    const { similarityScore, sharedNotes, olfactiveProfile } = perfume;
+    const { similarityScore, sharedNotes, olfactiveProfile } = data; // Extract from data, not perfume!
     
     // Find the dominant olfactive family
     const dominantFamily = olfactiveProfile ? Object.entries(olfactiveProfile)

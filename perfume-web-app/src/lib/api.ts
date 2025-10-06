@@ -286,18 +286,24 @@ export const perfumeApi = {
       }
       
       const data = await response.json();
+
       if (data.status === 'success' && data.data) {
         // Transform perfumes and preserve recommendation metadata
         return data.data.map((item: any) => {
           const transformedPerfume = transformPerfume(item.perfume);
-          return {
+
+          // Backend returns similarity data INSIDE the perfume object
+          // We need to extract it and put it at the top level for the recommendation engine
+          const result = {
             perfume: transformedPerfume,
-            // Include recommendation metadata from the perfume object
-            similarityScore: item.perfume.similarityScore,
-            sharedNotes: item.perfume.sharedNotes,
-            olfactiveProfile: item.perfume.olfactiveProfile,
+            // Extract from item.perfume (backend structure)
+            similarityScore: item.perfume?.similarityScore,
+            sharedNotes: item.perfume?.sharedNotes,
+            olfactiveProfile: item.perfume?.olfactiveProfile,
             notes: item.notes
           };
+
+          return result;
         }).slice(0, 4);
       }
       
