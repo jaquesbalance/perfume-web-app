@@ -1,6 +1,7 @@
 import type { Perfume } from '../types/perfume';
 import PerfumeImage from './PerfumeImage';
-import { Heart } from 'lucide-react';
+import { Heart, ThumbsDown } from 'lucide-react';
+import { useFeedback } from '../hooks/useFeedback';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -10,13 +11,8 @@ interface PerfumeCardProps {
 }
 
 export function PerfumeCard({ perfume, onClick, similarityScore, similarTo }: PerfumeCardProps) {
-  console.log('🎭 PerfumeCard data:', {
-    id: perfume.id,
-    title: perfume.title,
-    name: perfume.name,
-    brand: perfume.brand,
-    notes: perfume.notes
-  });
+  const { getFeedbackStatus, toggleLove, toggleReject } = useFeedback();
+  const feedbackStatus = getFeedbackStatus(perfume.id);
 
   // Calculate match percentage from similarity score
   const matchPercentage = similarityScore ? Math.round(similarityScore * 100) : null;
@@ -28,6 +24,16 @@ export function PerfumeCard({ perfume, onClick, similarityScore, similarTo }: Pe
     if (similarityScore >= 0.75) return 'bg-blue-500';
     if (similarityScore >= 0.6) return 'bg-yellow-500';
     return 'bg-slate-400';
+  };
+
+  const handleLoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLove(perfume.id);
+  };
+
+  const handleRejectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleReject(perfume.id);
   };
 
   return (
@@ -44,16 +50,46 @@ export function PerfumeCard({ perfume, onClick, similarityScore, similarTo }: Pe
         </div>
       )}
 
-      {/* Favorite Button */}
-      <button
-        className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 border border-slate-200"
-        onClick={(e) => {
-          e.stopPropagation();
-          // Handle favorite logic here
-        }}
-      >
-        <Heart className="w-3 h-3 text-slate-700 hover:text-red-600" />
-      </button>
+      {/* Feedback Buttons - Always visible if feedback given, otherwise show on hover */}
+      <div className={`absolute top-2 right-2 z-10 flex gap-1 transition-opacity duration-200 ${
+        feedbackStatus ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}>
+        {/* Love Button */}
+        <button
+          className={`p-1.5 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 hover:scale-110 border ${
+            feedbackStatus === 'loved'
+              ? 'bg-red-500 border-red-600 opacity-100'
+              : 'bg-white/90 border-slate-200 hover:bg-white'
+          }`}
+          onClick={handleLoveClick}
+          title={feedbackStatus === 'loved' ? 'Loved!' : 'Love this'}
+          aria-label={feedbackStatus === 'loved' ? 'Remove from loved' : 'Add to loved'}
+        >
+          <Heart
+            className={`w-3 h-3 transition-colors duration-200 ${
+              feedbackStatus === 'loved' ? 'text-white fill-white' : 'text-slate-700 hover:text-red-600'
+            }`}
+          />
+        </button>
+
+        {/* Reject Button */}
+        <button
+          className={`p-1.5 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 hover:scale-110 border ${
+            feedbackStatus === 'rejected'
+              ? 'bg-slate-500 border-slate-600 opacity-100'
+              : 'bg-white/90 border-slate-200 hover:bg-white'
+          }`}
+          onClick={handleRejectClick}
+          title={feedbackStatus === 'rejected' ? 'Not for me' : 'Not interested'}
+          aria-label={feedbackStatus === 'rejected' ? 'Remove from not interested' : 'Mark as not interested'}
+        >
+          <ThumbsDown
+            className={`w-3 h-3 transition-colors duration-200 ${
+              feedbackStatus === 'rejected' ? 'text-white fill-white' : 'text-slate-700 hover:text-slate-900'
+            }`}
+          />
+        </button>
+      </div>
 
       {/* Image */}
       <div className="aspect-[4/5] relative overflow-hidden bg-slate-100">

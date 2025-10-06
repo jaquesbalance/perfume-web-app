@@ -1,4 +1,5 @@
 import type { Perfume, ApiResponse, SearchParams, ImageMetadata } from '../types/perfume';
+import { formatNotes } from './note-formatter';
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -12,11 +13,26 @@ function transformPerfume(perfume: any): Perfume {
   // Handle Neo4j node structure - data is in properties
   const props = perfume.properties || perfume;
   
+  // Helper to parse note strings - split only on commas, preserve compound notes
+  const parseNotes = (noteString: string | string[]): string[] => {
+    if (Array.isArray(noteString)) {
+      return formatNotes(noteString);
+    }
+    if (!noteString) return [];
+
+    const rawNotes = noteString
+      .split(',')  // Split only on commas, NOT whitespace
+      .map(note => note.trim())  // Trim whitespace from each note
+      .filter(Boolean);  // Remove empty strings
+
+    return formatNotes(rawNotes);  // Apply formatting and deduplication
+  };
+
   // Extract notes from the Neo4j format
   const notes = props.notes || {
-    top: props.top_notes ? props.top_notes.split(/[,\s]+/).filter(Boolean) : [],
-    middle: props.middle_notes ? props.middle_notes.split(/[,\s]+/).filter(Boolean) : [],
-    base: props.base_notes ? props.base_notes.split(/[,\s]+/).filter(Boolean) : [],
+    top: parseNotes(props.top_notes),
+    middle: parseNotes(props.middle_notes),
+    base: parseNotes(props.base_notes),
   };
 
   // Handle Neo4j integer format for year and id

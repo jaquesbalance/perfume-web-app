@@ -7,6 +7,8 @@ import { perfumeApi } from './lib/api';
 import { SearchAutocomplete } from './components/SearchAutocomplete';
 import { PerfumeCard } from './components/PerfumeCard';
 import { PerfumeDetail } from './components/PerfumeDetail';
+import { PreferenceInsights } from './components/PreferenceInsights';
+import { useFeedback } from './hooks/useFeedback';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -25,6 +27,7 @@ function PerfumeApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  const { feedback } = useFeedback();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['perfumes', searchQuery, selectedCategory],
@@ -54,22 +57,24 @@ function PerfumeApp() {
     setSelectedPerfume(null);
   };
 
-  // Sort perfumes based on selected option
-  const sortedPerfumes = data?.perfumes ? [...data.perfumes].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return (a.title || a.name).localeCompare(b.title || b.name);
-      case 'brand':
-        return a.brand.localeCompare(b.brand);
-      case 'year':
-        const yearA = parseInt(String(a.year)) || 0;
-        const yearB = parseInt(String(b.year)) || 0;
-        return yearB - yearA; // Newest first
-      case 'relevance':
-      default:
-        return 0; // Keep original order
-    }
-  }) : [];
+  // Filter out rejected perfumes and sort
+  const sortedPerfumes = data?.perfumes ? [...data.perfumes]
+    .filter(perfume => !feedback.rejected.includes(perfume.id)) // Filter out rejected
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return (a.title || a.name).localeCompare(b.title || b.name);
+        case 'brand':
+          return a.brand.localeCompare(b.brand);
+        case 'year':
+          const yearA = parseInt(String(a.year)) || 0;
+          const yearB = parseInt(String(b.year)) || 0;
+          return yearB - yearA; // Newest first
+        case 'relevance':
+        default:
+          return 0; // Keep original order
+      }
+    }) : [];
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -207,6 +212,8 @@ function PerfumeApp() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Preference Insights - Show after 3+ ratings */}
+        {data?.perfumes && <PreferenceInsights allPerfumes={data.perfumes} />}
         {isLoading && (
           <div className="text-center py-16">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary-500" />

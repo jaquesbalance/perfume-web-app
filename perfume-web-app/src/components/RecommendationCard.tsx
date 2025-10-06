@@ -1,6 +1,7 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Heart, ThumbsDown } from 'lucide-react';
 import type { Perfume, RecommendationReason } from '../types/perfume';
 import PerfumeImage from './PerfumeImage';
+import { useFeedback } from '../hooks/useFeedback';
 
 interface RecommendationCardProps {
   perfume: Perfume;
@@ -9,6 +10,8 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ perfume, onPress, reason }: RecommendationCardProps) {
+  const { getFeedbackStatus, toggleLove, toggleReject } = useFeedback();
+  const feedbackStatus = getFeedbackStatus(perfume.id);
 
   // Calculate match percentage from confidence (0-1 scale to 0-100%)
   const matchPercentage = reason?.confidence ? Math.round(reason.confidence * 100) : null;
@@ -19,6 +22,16 @@ export function RecommendationCard({ perfume, onPress, reason }: RecommendationC
     if (confidence >= 0.75) return 'bg-blue-100 text-blue-800';
     if (confidence >= 0.6) return 'bg-yellow-100 text-yellow-800';
     return 'bg-slate-100 text-slate-800';
+  };
+
+  const handleLoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLove(perfume.id);
+  };
+
+  const handleRejectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleReject(perfume.id);
   };
 
   return (
@@ -74,6 +87,43 @@ export function RecommendationCard({ perfume, onPress, reason }: RecommendationC
               </p>
             </div>
           )}
+        </div>
+
+        {/* Feedback Buttons */}
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            className={`p-2 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 hover:scale-110 border ${
+              feedbackStatus === 'loved'
+                ? 'bg-red-500 border-red-600'
+                : 'bg-white border-slate-200 hover:bg-slate-50'
+            }`}
+            onClick={handleLoveClick}
+            title={feedbackStatus === 'loved' ? 'Loved!' : 'Love this'}
+            aria-label={feedbackStatus === 'loved' ? 'Remove from loved' : 'Add to loved'}
+          >
+            <Heart
+              className={`w-4 h-4 transition-colors duration-200 ${
+                feedbackStatus === 'loved' ? 'text-white fill-white' : 'text-slate-700'
+              }`}
+            />
+          </button>
+
+          <button
+            className={`p-2 backdrop-blur-sm rounded-full shadow-md transition-all duration-200 hover:scale-110 border ${
+              feedbackStatus === 'rejected'
+                ? 'bg-slate-500 border-slate-600'
+                : 'bg-white border-slate-200 hover:bg-slate-50'
+            }`}
+            onClick={handleRejectClick}
+            title={feedbackStatus === 'rejected' ? 'Not for me' : 'Not interested'}
+            aria-label={feedbackStatus === 'rejected' ? 'Remove from not interested' : 'Mark as not interested'}
+          >
+            <ThumbsDown
+              className={`w-4 h-4 transition-colors duration-200 ${
+                feedbackStatus === 'rejected' ? 'text-white fill-white' : 'text-slate-700'
+              }`}
+            />
+          </button>
         </div>
 
         <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-slate-200 transition-colors duration-200 flex-shrink-0">

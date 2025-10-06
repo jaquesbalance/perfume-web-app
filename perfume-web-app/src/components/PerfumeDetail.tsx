@@ -7,6 +7,7 @@ import { RecommendationEngine } from '../lib/recommendation-engine';
 import { FragranceNotes } from './FragranceNotes';
 import { RecommendationCard } from './RecommendationCard';
 import PerfumeImage from './PerfumeImage';
+import { useFeedback } from '../hooks/useFeedback';
 
 interface PerfumeDetailProps {
   perfume: Perfume;
@@ -15,6 +16,7 @@ interface PerfumeDetailProps {
 }
 
 export function PerfumeDetail({ perfume, onBack, onPerfumeSelect }: PerfumeDetailProps) {
+  const { feedback } = useFeedback();
   const { data: recommendationData, isLoading } = useQuery({
     queryKey: ['similar-perfumes-data', perfume.id],
     queryFn: () => perfumeApi.getSimilarPerfumesWithData(perfume.id),
@@ -25,6 +27,11 @@ export function PerfumeDetail({ perfume, onBack, onPerfumeSelect }: PerfumeDetai
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [perfume.id]);
+
+  // Filter out rejected perfumes from recommendations
+  const filteredRecommendations = recommendationData?.filter(
+    recData => !feedback.rejected.includes(recData.perfume.id)
+  ) || [];
 
 
   return (
@@ -107,9 +114,9 @@ export function PerfumeDetail({ perfume, onBack, onPerfumeSelect }: PerfumeDetai
             </div>
           )}
 
-          {recommendationData && recommendationData.length > 0 && (
+          {filteredRecommendations.length > 0 && (
             <div className="space-y-4">
-              {recommendationData.slice(0, 4).map((recData, index) => {
+              {filteredRecommendations.slice(0, 4).map((recData, index) => {
                 const reason = RecommendationEngine.generateRecommendationReasonFromData(
                   recData,
                   index
@@ -127,7 +134,7 @@ export function PerfumeDetail({ perfume, onBack, onPerfumeSelect }: PerfumeDetai
             </div>
           )}
 
-          {recommendationData && recommendationData.length === 0 && (
+          {!isLoading && filteredRecommendations.length === 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
               <p className="text-slate-700 text-lg font-medium">No similar fragrances found</p>
             </div>
