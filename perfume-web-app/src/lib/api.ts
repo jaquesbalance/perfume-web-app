@@ -1,60 +1,180 @@
-import type { Perfume, ApiResponse, SearchParams } from '../types/perfume';
+import type { Perfume, ApiResponse, SearchParams, ImageMetadata } from '../types/perfume';
 
 const API_BASE_URL = 'http://localhost:3000';
 
 // Transform perfume data from API
-function transformPerfume(perfume: Perfume): Perfume {
-  const notes = perfume.notes || {
-    top: perfume.top_notes ? [perfume.top_notes] : [],
-    middle: perfume.middle_notes ? [perfume.middle_notes] : [],
-    base: perfume.base_notes ? [perfume.base_notes] : [],
-  };
-
-  // Handle Neo4j integer format for year
-  let year = perfume.year;
-  if (year && typeof year === 'object' && 'low' in year) {
-    year = (year as any).low;
+function transformPerfume(perfume: any): Perfume {
+  if (!perfume) {
+    console.warn('⚠️ No perfume data to transform');
+    return {} as Perfume;
   }
 
-  return {
-    ...perfume,
-    notes,
-    year,
+  // Handle Neo4j node structure - data is in properties
+  const props = perfume.properties || perfume;
+  
+  // Extract notes from the Neo4j format
+  const notes = props.notes || {
+    top: props.top_notes ? props.top_notes.split(/[,\s]+/).filter(Boolean) : [],
+    middle: props.middle_notes ? props.middle_notes.split(/[,\s]+/).filter(Boolean) : [],
+    base: props.base_notes ? props.base_notes.split(/[,\s]+/).filter(Boolean) : [],
   };
+
+  // Handle Neo4j integer format for year and id
+  let year = props.year;
+  if (year && typeof year === 'object' && 'low' in year) {
+    year = year.low;
+  }
+  
+  let id = props.id || perfume.identity?.low?.toString();
+  if (perfume.identity && typeof perfume.identity === 'object' && 'low' in perfume.identity) {
+    id = perfume.identity.low.toString();
+  }
+
+  const transformed = {
+    id: id,
+    title: props.title,
+    name: props.name || props.title,
+    brand: props.brand,
+    description: props.description,
+    year: year,
+    imgId: props.imgId,
+    imageMetadata: props.imageMetadata,
+    sourceUrl: props.sourceUrl,
+    top_notes: props.top_notes,
+    middle_notes: props.middle_notes,
+    base_notes: props.base_notes,
+    notes,
+  };
+  
+  return transformed;
 }
 
+// Simple image URL cache for signed URLs
+class ImageUrlCache {
+  private cache = new Map<string, { url: string; expires: number }>();
+  private readonly CACHE_DURATION = 50 * 60 * 1000; // 50 minutes (URLs expire in 1 hour)
+
+  get(key: string): string | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() < cached.expires) {
+      return cached.url;
+    }
+    if (cached) {
+      this.cache.delete(key); // Remove expired entry
+    }
+    return null;
+  }
+
+  set(key: string, url: string): void {
+    this.cache.set(key, {
+      url,
+      expires: Date.now() + this.CACHE_DURATION
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const imageCache = new ImageUrlCache();
+
 export const perfumeApi = {
-  // Get signed URL for image
-  async getImageSignedUrl(imgId: string): Promise<string> {
+  // Get featured perfumes for homepage - with timeout fallback
+  async getFeaturedPerfumes(limit: number = 12): Promise<{ perfumes: Perfume[]; total: number }> {
     try {
+      // Try featured endpoint with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout for faster UX
+      
+      const response = await fetch(`${API_BASE_URL}/api/perfumes/featured?limit=${limit}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      
+      if (data.data && data.data.length > 0) {
+        return {
+          perfumes: data.data.map(transformPerfume),
+          total: data.pagination?.total || data.data.length,
+        };
+      }
+    } catch (error) {
+      console.warn('Featured endpoint failed or timed out, falling back to regular perfumes:', error);
+    }
+    
+    // Fallback to regular perfumes with imageMetadata
+    console.log('Using fallback: regular perfumes with random selection');
+    const fallback = await this.getAllPerfumes({ limit, random: true });
+    return {
+      perfumes: fallback.perfumes,
+      total: fallback.total,
+    };
+  },
+
+  // Fast image URL generation using exact extension from metadata
+  async getImageSignedUrl(imgId: string, imageMetadata?: ImageMetadata): Promise<string> {
+    // Use exact extension from metadata - no more guessing!
+    const extension = imageMetadata?.extension || '.jpg';
+    const cacheKey = `${imgId}${extension}`;
+    
+    // Check cache first
+    const cachedUrl = imageCache.get(cacheKey);
+    if (cachedUrl) {
+      return cachedUrl;
+    }
+
+    try {
+      // Add timeout for faster failure
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout per image
+      
       const response = await fetch(`${API_BASE_URL}/api/images/signed-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           bucket: 'bourgeon',
-          key: `img/${imgId}.jpg`,
-          expires: 3600, // 1 hour
+          key: `img/${imgId}${extension}`,
+          expires: 3600,
         }),
       });
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Don't log warnings for 404s - many images don't exist
+        if (response.status !== 404) {
+          console.warn(`Failed to get signed URL for ${imgId}${extension}:`, response.status);
+        }
+        return '';
       }
       
       const data = await response.json();
-      if (data.status === 'success') {
+      if (data.status === 'success' && data.url) {
+        imageCache.set(cacheKey, data.url);
         return data.url;
       }
-      throw new Error(data.message || 'Failed to get signed URL');
     } catch (error) {
-      console.warn('Failed to get signed URL for image:', imgId, error);
-      return '';
+      // Don't log timeout errors - they're expected
+      if (!error.name?.includes('Abort')) {
+        console.warn(`Error getting signed URL for ${imgId}${extension}:`, error);
+      }
     }
+    
+    return '';
   },
+
   // Get all perfumes with optional filtering
-  async getAllPerfumes(params?: SearchParams): Promise<{ perfumes: Perfume[]; total: number; page: number; limit: number }> {
+  async getAllPerfumes(params?: SearchParams & { random?: boolean; withImages?: boolean }): Promise<{ perfumes: Perfume[]; total: number; page: number; limit: number }> {
     const searchParams = new URLSearchParams();
     
     if (params?.query) searchParams.set('search', params.query);
@@ -64,6 +184,8 @@ export const perfumeApi = {
     if (params?.brand?.length) searchParams.set('brand', params.brand.join(','));
     if (params?.category?.length) searchParams.set('category', params.category.join(','));
     if (params?.notes?.length) searchParams.set('notes', params.notes.join(','));
+    if (params?.random) searchParams.set('random', 'true');
+    if (params?.withImages) searchParams.set('withImages', 'true');
 
     const url = `${API_BASE_URL}/api/perfumes${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
     
@@ -82,7 +204,7 @@ export const perfumeApi = {
     };
   },
 
-  // Search perfumes
+  // Search perfumes - backend image filtering is too slow, so search all
   async searchPerfumes(query: string): Promise<{ perfumes: Perfume[]; total: number }> {
     const result = await this.getAllPerfumes({ query, limit: 50 });
     return {
@@ -190,5 +312,69 @@ export const perfumeApi = {
   async getPersonalizedRecommendations(): Promise<Perfume[]> {
     const result = await this.getAllPerfumes({ limit: 10 });
     return result.perfumes;
+  },
+
+  // Get category-based recommendations
+  async getCategoryRecommendations(category: string, limit: number = 20, brands?: string[]): Promise<{ perfumes: Perfume[]; total: number }> {
+    try {
+      const requestBody: any = {
+        category,
+        limit,
+      };
+      
+      // Only add brands if specifically provided
+      if (brands && brands.length > 0) {
+        requestBody.brands = brands;
+      }
+      
+      console.log('🔍 Category API Request:', requestBody);
+      console.log('📍 Full URL:', `${API_BASE_URL}/api/recommendations`);
+      console.log('📋 Request body as JSON:', JSON.stringify(requestBody));
+      
+      const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`📊 ${category} API Response:`, {
+        status: data.status,
+        dataLength: data.data?.length,
+        firstItem: data.data?.[0]?.perfume?.title,
+        first3Items: data.data?.slice(0, 3).map((item: any) => item.perfume?.title),
+        rawResponse: data // Log full response to see what we're getting
+      });
+      
+      if (data.status === 'success' && data.data) {
+        const perfumes = data.data.map((item: any) => {
+          // The API returns the perfume data directly in item.perfume
+          const perfumeData = item.perfume;
+          console.log('🔧 Raw perfume data:', perfumeData);
+          return transformPerfume(perfumeData);
+        });
+        return {
+          perfumes,
+          total: perfumes.length,
+        };
+      }
+      
+      throw new Error(data.message || 'Failed to get category recommendations');
+    } catch (error) {
+      console.warn(`Failed to get ${category} recommendations:`, error);
+      
+      // Fallback to regular search if category recommendations fail
+      const result = await this.getAllPerfumes({ limit });
+      return {
+        perfumes: result.perfumes,
+        total: result.total,
+      };
+    }
   },
 };

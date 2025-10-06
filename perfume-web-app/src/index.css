@@ -1,68 +1,85 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
-
-@import "tailwindcss/theme" reference;
-@import "tailwindcss/utilities" reference;
+@import "tailwindcss";
 
 @theme {
-  --color-primary-50: #f0f4ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-500: #8b5cf6;
-  --color-primary-600: #7c3aed;
-  --color-primary-700: #6d28d9;
-  --color-accent-50: #fdf4ff;
-  --color-accent-100: #fae8ff;
-  --color-accent-500: #d946ef;
-  --color-accent-600: #c026d3;
-  --color-rose-500: #f43f5e;
-  --color-emerald-500: #10b981;
-  --color-amber-500: #f59e0b;
-  --color-slate-50: #f8fafc;
-  --color-slate-100: #f1f5f9;
-  --color-slate-200: #e2e8f0;
-  --color-slate-800: #1e293b;
-  --color-slate-900: #0f172a;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  
+  --color-accent-50: #fef2f2;
+  --color-accent-100: #fee2e2;
+  --color-accent-200: #fecaca;
+  --color-accent-300: #fca5a5;
+  --color-accent-400: #f87171;
+  --color-accent-500: #ef4444;
+  --color-accent-600: #dc2626;
+  --color-accent-700: #b91c1c;
+  --color-accent-800: #991b1b;
+  --color-accent-900: #7f1d1d;
+  
+  --font-family-sans: Inter, system-ui, sans-serif;
+  --font-family-serif: "Playfair Display", serif;
 }
 
 @layer base {
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: theme(fontFamily.sans);
     margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: theme(colors.slate.50);
     min-height: 100vh;
+    color: theme(colors.slate.900);
   }
   
   h1, h2, h3 {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: theme(fontFamily.sans);
     font-weight: 700;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-300;
-  }
-  
-  .glass-card {
-    @apply bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl;
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200;
   }
   
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white font-semibold px-6 py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md;
   }
   
   .btn-secondary {
-    @apply bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium px-6 py-3 rounded-full transition-all duration-300 border border-white/30;
+    @apply bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium px-6 py-3 rounded-lg transition-all duration-200;
   }
   
   .search-input {
-    @apply bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-6 py-4 text-white placeholder-white/70 focus:bg-white/30 focus:border-white/50 transition-all duration-300 w-full;
+    @apply bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 placeholder-slate-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all duration-200 w-full;
   }
   
   .perfume-card {
-    @apply bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all duration-300 overflow-hidden border border-white/20;
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden;
   }
   
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+  .header-nav {
+    @apply bg-white border-b border-slate-200 sticky top-0 z-50;
+  }
+  
+  .filter-chip {
+    @apply bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 cursor-pointer border border-slate-300;
+  }
+  
+  .filter-chip-active {
+    @apply bg-primary-600 text-white border border-primary-700 hover:bg-primary-700;
+  }
+}
+
+@layer utilities {
+  .text-2xs {
+    font-size: 0.625rem;
+    line-height: 0.75rem;
   }
 }

@@ -15,18 +15,17 @@ export function FragranceNotes({ topNotes, middleNotes, baseNotes }: FragranceNo
     return Array.isArray(notes) ? notes : [];
   };
 
-  const renderNoteCategory = (title: string, notes: string[], emoji: string, bgColor: string) => {
+  const renderNoteCategory = (title: string, notes: string[], bgColor: string, textColor: string) => {
     if (notes.length === 0) return null;
 
     return (
-      <div className={`${bgColor} backdrop-blur-sm rounded-2xl p-5 border border-white/20`}>
-        <h4 className="font-bold text-white text-lg mb-3 flex items-center gap-2">
-          <span className="text-2xl">{emoji}</span>
+      <div className={`${bgColor} rounded-xl p-5 border border-slate-200`}>
+        <h4 className={`font-bold ${textColor} text-lg mb-3`}>
           {title}
         </h4>
         <div className="flex flex-wrap gap-2">
           {notes.slice(0, 6).map((note, index) => (
-            <span key={index} className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium border border-white/30">
+            <span key={index} className="bg-white text-slate-700 px-3 py-1 rounded-full text-sm font-medium border border-slate-200 shadow-sm">
               {note}
             </span>
           ))}
@@ -40,16 +39,15 @@ export function FragranceNotes({ topNotes, middleNotes, baseNotes }: FragranceNo
   const baseNotesData = parseNotes(baseNotes);
 
   return (
-    <div className="glass-card p-6">
-      <h3 className="text-3xl font-black text-white mb-6 flex items-center gap-3">
-        <span className="text-4xl">🌿</span>
-        Scent Profile
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h3 className="text-3xl font-bold text-slate-900 mb-6">
+        Fragrance Notes
       </h3>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {renderNoteCategory('Top Notes', topNotesData, '✨', 'bg-amber-500/30')}
-        {renderNoteCategory('Heart Notes', middleNotesData, '🌸', 'bg-rose-500/30')}
-        {renderNoteCategory('Base Notes', baseNotesData, '🌲', 'bg-emerald-500/30')}
+        {renderNoteCategory('Top Notes', topNotesData, 'bg-amber-50', 'text-amber-800')}
+        {renderNoteCategory('Heart Notes', middleNotesData, 'bg-rose-50', 'text-rose-800')}
+        {renderNoteCategory('Base Notes', baseNotesData, 'bg-emerald-50', 'text-emerald-800')}
       </div>
     </div>
   );

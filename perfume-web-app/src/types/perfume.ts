@@ -1,3 +1,13 @@
+export interface ImageMetadata {
+  imgId: string;
+  s3Key: string;
+  extension: string;
+  originalFilename: string;
+  uploadedAt?: number;
+  migratedFrom?: string;
+  migrationDate?: number;
+}
+
 export interface Perfume {
   id: string;
   name: string;
@@ -6,6 +16,7 @@ export interface Perfume {
   description: string;
   year?: string | number;
   imgId?: string;
+  imageMetadata?: ImageMetadata;
   imageUrl?: string;
   sourceUrl?: string;
   top_notes?: string;

@@ -28,9 +28,11 @@ export function PerfumeImage({
         if (perfume.imageUrl) {
           // Use direct URL if available
           setImageUrl(perfume.imageUrl);
-        } else if (perfume.imgId) {
-          // Generate signed URL for S3 image
-          const signedUrl = await perfumeApi.getImageSignedUrl(perfume.imgId);
+        } else if (perfume.imgId || perfume.imageMetadata?.imgId) {
+          // Use imgId from imageMetadata if main imgId is null (backend migration)
+          const imgId = perfume.imgId || perfume.imageMetadata?.imgId;
+          // Generate signed URL for S3 image with exact extension from metadata
+          const signedUrl = await perfumeApi.getImageSignedUrl(imgId!, perfume.imageMetadata);
           if (signedUrl) {
             setImageUrl(signedUrl);
           } else {
@@ -50,7 +52,7 @@ export function PerfumeImage({
     }
 
     loadImage();
-  }, [perfume.imageUrl, perfume.imgId]);
+  }, [perfume.imageUrl, perfume.imgId, perfume.imageMetadata]);
 
   // Create elegant placeholder with perfume name/brand
   const createPlaceholder = () => {
@@ -79,22 +81,19 @@ export function PerfumeImage({
   }
 
   return (
-    <div className={`overflow-hidden rounded-2xl ${className}`} style={{ width, height }}>
-      <img
-        src={imageUrl || createPlaceholder()}
-        alt={`${perfume.title || perfume.name} by ${perfume.brand}`}
-        className="w-full h-full object-cover"
-        style={{ width, height }}
-        onError={(e) => {
-          const img = e.target as HTMLImageElement;
-          console.warn('Image failed to load:', imageUrl);
-          // Set to placeholder if not already
-          if (img.src !== createPlaceholder()) {
-            img.src = createPlaceholder();
-          }
-        }}
-      />
-    </div>
+    <img
+      src={imageUrl || createPlaceholder()}
+      alt={`${perfume.title || perfume.name} by ${perfume.brand}`}
+      className={className}
+      onError={(e) => {
+        const img = e.target as HTMLImageElement;
+        console.warn('Image failed to load:', imageUrl);
+        // Set to placeholder if not already
+        if (img.src !== createPlaceholder()) {
+          img.src = createPlaceholder();
+        }
+      }}
+    />
   );
 }
 
