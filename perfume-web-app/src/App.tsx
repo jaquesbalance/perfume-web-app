@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Sparkles, Target, CheckCircle2 } from 'lucide-react';
+import { Loader2, Sparkles, Target, CheckCircle2, Search } from 'lucide-react';
 import type { Perfume } from './types/perfume';
 import { perfumeApi } from './lib/api';
 import { SearchAutocomplete } from './components/SearchAutocomplete';
@@ -32,21 +32,16 @@ function PerfumeApp() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['perfumes', searchQuery, selectedCategory],
     queryFn: async () => {
-      console.log('🎯 Query triggered:', { searchQuery, selectedCategory });
-      
       if (searchQuery) {
-        console.log('📝 Executing search query:', searchQuery);
         return perfumeApi.searchPerfumes(searchQuery);
       } else if (selectedCategory && selectedCategory !== 'all') {
-        console.log('🏷️ Executing category filter:', selectedCategory);
         return perfumeApi.getCategoryRecommendations(selectedCategory, 20);
       } else {
-        console.log('📋 Executing featured perfumes query');
         return perfumeApi.getFeaturedPerfumes(12);
       }
     },
     enabled: true,
-    staleTime: 0, // Temporarily disable caching to see fresh data
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   const handlePerfumeSelect = (perfume: Perfume) => {

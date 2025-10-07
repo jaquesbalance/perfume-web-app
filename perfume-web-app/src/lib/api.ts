@@ -124,9 +124,8 @@ export const perfumeApi = {
     } catch (error) {
       console.warn('Featured endpoint failed or timed out, falling back to regular perfumes:', error);
     }
-    
+
     // Fallback to regular perfumes with imageMetadata
-    console.log('Using fallback: regular perfumes with random selection');
     const fallback = await this.getAllPerfumes({ limit, random: true });
     return {
       perfumes: fallback.perfumes,
@@ -348,11 +347,7 @@ export const perfumeApi = {
       if (brands && brands.length > 0) {
         requestBody.brands = brands;
       }
-      
-      console.log('🔍 Category API Request:', requestBody);
-      console.log('📍 Full URL:', `${API_BASE_URL}/api/recommendations`);
-      console.log('📋 Request body as JSON:', JSON.stringify(requestBody));
-      
+
       const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
         method: 'POST',
         headers: {
@@ -366,19 +361,11 @@ export const perfumeApi = {
       }
       
       const data = await response.json();
-      console.log(`📊 ${category} API Response:`, {
-        status: data.status,
-        dataLength: data.data?.length,
-        firstItem: data.data?.[0]?.perfume?.title,
-        first3Items: data.data?.slice(0, 3).map((item: any) => item.perfume?.title),
-        rawResponse: data // Log full response to see what we're getting
-      });
-      
+
       if (data.status === 'success' && data.data) {
         const perfumes = data.data.map((item: any) => {
           // The API returns the perfume data directly in item.perfume
           const perfumeData = item.perfume;
-          console.log('🔧 Raw perfume data:', perfumeData);
           return transformPerfume(perfumeData);
         });
         return {
