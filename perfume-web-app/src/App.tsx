@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Sparkles, Target, CheckCircle2, Search } from 'lucide-react';
+import { Loader2, Sparkles, Target, CheckCircle2, Search, User as UserIcon, LogOut } from 'lucide-react';
 import type { Perfume } from './types/perfume';
 import { perfumeApi } from './lib/api';
 import { SearchAutocomplete } from './components/SearchAutocomplete';
 import { PerfumeCard } from './components/PerfumeCard';
 import { PerfumeDetail } from './components/PerfumeDetail';
 import { PreferenceInsights } from './components/PreferenceInsights';
+import { LoginModal } from './components/LoginModal';
+import { SignupModal } from './components/SignupModal';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useFeedback } from './hooks/useFeedback';
 import { validateCategory, sanitizeErrorMessage } from './lib/validation';
 
@@ -28,7 +31,12 @@ function PerfumeApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   const { feedback } = useFeedback();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['perfumes', searchQuery, selectedCategory],
@@ -102,17 +110,84 @@ function PerfumeApp() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header Navigation - Simplified */}
+      {/* Header Navigation */}
       <div className="header-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-16">
-            {/* Logo - Centered */}
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
             <h1 className="text-2xl font-bold text-slate-900">
               FragranceFind
             </h1>
+
+            {/* User Menu */}
+            <div className="relative">
+              {isAuthenticated && user ? (
+                <div>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors duration-200"
+                  >
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="text-slate-700 font-medium hidden sm:inline">
+                      {user.name || user.email.split('@')[0]}
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-slate-200">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          await logout();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="btn-primary"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSwitchToSignup={() => {
+          setShowLoginModal(false);
+          setShowSignupModal(true);
+        }}
+      />
+      <SignupModal
+        isOpen={showSignupModal}
+        onClose={() => setShowSignupModal(false)}
+        onSwitchToLogin={() => {
+          setShowSignupModal(false);
+          setShowLoginModal(true);
+        }}
+      />
 
       {/* Hero Section - Redesigned with "Start With One" approach */}
       <div className="bg-gradient-to-b from-white to-slate-50 border-b border-slate-200">
@@ -316,7 +391,9 @@ function PerfumeApp() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PerfumeApp />
+      <AuthProvider>
+        <PerfumeApp />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
