@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { perfumeApi } from '../lib/api';
 import type { Perfume } from '../types/perfume';
 import PerfumeImage from './PerfumeImage';
+import { validateSearchInput } from '../lib/validation';
 
 interface SearchAutocompleteProps {
   value: string;
@@ -57,7 +58,8 @@ export function SearchAutocomplete({
   }, [suggestions, isFocused, debouncedQuery]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
+    const sanitized = validateSearchInput(e.target.value);
+    onChange(sanitized);
   };
 
   const handleSelectPerfume = (perfume: Perfume) => {

@@ -9,6 +9,7 @@ import { PerfumeCard } from './components/PerfumeCard';
 import { PerfumeDetail } from './components/PerfumeDetail';
 import { PreferenceInsights } from './components/PreferenceInsights';
 import { useFeedback } from './hooks/useFeedback';
+import { validateCategory, sanitizeErrorMessage } from './lib/validation';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -72,8 +73,11 @@ function PerfumeApp() {
     }) : [];
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setSearchQuery(''); // Clear search when selecting category
+    // Validate category before setting
+    if (validateCategory(category)) {
+      setSelectedCategory(category);
+      setSearchQuery(''); // Clear search when selecting category
+    }
   };
 
   const categories = [
@@ -221,7 +225,7 @@ function PerfumeApp() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
               <p className="text-red-700 font-semibold mb-2">Unable to load perfumes</p>
               <p className="text-red-600 text-sm">
-                {error instanceof Error ? error.message : 'Please try again later'}
+                {sanitizeErrorMessage(error)}
               </p>
             </div>
           </div>

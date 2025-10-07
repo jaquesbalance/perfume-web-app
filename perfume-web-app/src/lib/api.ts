@@ -1,7 +1,13 @@
 import type { Perfume, ApiResponse, SearchParams, ImageMetadata } from '../types/perfume';
 import { formatNotes } from './note-formatter';
 
-const API_BASE_URL = 'http://localhost:3000';
+// Use environment variable for API URL, with fallback for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+// Warn if using default fallback in production
+if (import.meta.env.PROD && API_BASE_URL === 'http://localhost:3000') {
+  console.error('⚠️ SECURITY WARNING: Using default localhost API URL in production! Set VITE_API_BASE_URL environment variable.');
+}
 
 // Transform perfume data from API
 function transformPerfume(perfume: any): Perfume {
